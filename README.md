@@ -1,4 +1,4 @@
-# Experimental design, ANOVA vs. Regression, Fixed vs. Random effect R Workshop. 
+# Experimental design, ANOVA vs. Regression, Fixed vs. Random effect R Workshop 
 
 Hey there!  
 
