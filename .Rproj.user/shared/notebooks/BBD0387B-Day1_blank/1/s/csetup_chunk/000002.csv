@@ -1,0 +1,10 @@
+"0","```r
+# Loading packages
+library(tidyverse) # for data wrangling and plotting
+library(broom.mixed) # for residual diagnostics
+library(car) # for Anova function
+library(lmerTest) # for mixed-effect modeling
+library(emmeans) # for model mean extraction
+library(multcomp) # for pairwise comparison letter display
+library(knitr) # for figure displaying
+```"

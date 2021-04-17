@@ -1,0 +1,26 @@
+"0","```r
+reg1$Anova
+
+```"
+"1","[[1]]
+Anova Table (Type III tests)
+
+Response: Yield_Mgha
+             Sum Sq Df F value    Pr(>F)    
+(Intercept) 166.128  1 249.346 5.441e-12 ***
+SR_ksha      46.091  1  69.179 1.402e-07 ***
+Residuals    11.993 18                      
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+[[2]]
+Anova Table (Type III tests)
+
+Response: Yield_Mgha
+            Sum Sq Df F value  Pr(>F)   
+(Intercept) 156.66  1  8.5240 0.00915 **
+SR_ksha      46.09  1  2.5079 0.13069   
+Residuals   330.82 18                   
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+"

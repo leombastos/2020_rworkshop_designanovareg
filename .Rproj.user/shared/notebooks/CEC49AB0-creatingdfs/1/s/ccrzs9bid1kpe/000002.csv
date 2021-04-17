@@ -1,0 +1,28 @@
+"0","```r
+df1 <- crd$book %>%
+
+```"
+"1","There were 32 warnings (use warnings() to see them)
+"
+"0","```r
+  rename(SR_ksha=`factor(seq(40, 120, 20))`) %>%
+  mutate(SR_ksha=as.numeric(SR_ksha)) %>%
+  arrange(r, SR_ksha) %>%
+  mutate(e=rnorm(0,.5,n = n()),
+         Bj=case_when(
+           r == 1 ~ 6,
+           r == 2 ~ 0,
+           r == 3 ~ -4,
+           r == 4 ~ -3)) %>%
+  mutate(sigmab=rnorm(n(),0,.2),
+    Bj2=case_when(
+           r == 1 ~ 1,
+           r == 2 ~ 0,
+           r == 3 ~ -1.5,
+           r == 4 ~ -1),
+    Bj2=Bj2+sigmab) %>%
+  mutate(CRD=((-0.0013*(SR_ksha^2)) + (0.2627*SR_ksha) + 1.0657 + e),
+        RCBD=((-0.0013*(SR_ksha^2)) + (0.2627*SR_ksha) + 1.0657 + Bj + e),
+        RCBDreg=((-0.0013*(SR_ksha^2)) + (0.2627*SR_ksha) + 1.0657 + e + Bj2 )) %>%
+  gather(Design, Yield_Mgha, CRD, RCBD, RCBDreg)
+```"

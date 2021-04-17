@@ -1,0 +1,462 @@
+---
+title: "R Notebook"
+output: html_document
+---
+```{r setup}
+library(tidyverse)
+library(broom)
+library(broom.mixed)
+library(car)
+library(lmerTest)
+library(emmeans)
+library(multcomp)
+
+```
+
+# Simulating quadratic response of yield to PD
+```{r}
+crd <- agricolae::design.crd(trt=factor(seq(40,120,20)), r = 4)
+
+df1 <- crd$book %>%
+  rename(SR_ksha=`factor(seq(40, 120, 20))`) %>%
+  mutate(SR_ksha=as.numeric(SR_ksha)) %>%
+  arrange(r, SR_ksha) %>%
+  mutate(e=rnorm(0,.5,n = n()),
+         Bj=case_when(
+           r == 1 ~ 6,
+           r == 2 ~ 0,
+           r == 3 ~ -4,
+           r == 4 ~ -3)) %>%
+  mutate(sigmab=rnorm(n(),0,.2),
+         Bj2=case_when(
+           r == 1 ~ 1,
+           r == 2 ~ 0,
+           r == 3 ~ -1.5,
+           r == 4 ~ -1),
+         Bj2=Bj2+sigmab) %>%
+  mutate(CRD=((-0.0013*(SR_ksha^2)) + (0.2627*SR_ksha) + 1.0657 + e),
+         RCBD=((-0.0013*(SR_ksha^2)) + (0.2627*SR_ksha) + 1.0657 + Bj + e),
+         RCBDreg=((-0.0013*(SR_ksha^2)) + (0.2627*SR_ksha) + 1.0657 + e + Bj2 )) %>%
+  gather(Design, Yield_Mgha, CRD, RCBD, RCBDreg)
+
+
+nd <- data.frame(SR_ksha=seq(40,120,1))
+```
+
+```{r}
+df1 %>%
+  filter(Design=="RCBDreg") %>%
+  ggplot(aes(x=SR_ksha, y=Yield_Mgha, color=Design))+
+  geom_point()+
+  #geom_smooth()+
+  geom_smooth(method="lm", formula = y~x+I(x^2))
+
+reg <- df1 %>%
+  filter(Design=="RCBDreg") %>%
+  rename(Rep=r) %>%
+  dplyr::select(Design, Rep, SR_ksha, Yield_Mgha)
+
+
+write_csv(reg, "../output/reg.csv")
+
+```
+
+
+```{r}
+df1 %>%
+  ggplot(aes(x=SR_ksha, y=Yield_Mgha, color=Design))+
+  geom_point()+
+  geom_smooth()
+```
+# 1) Regression  
+# Modeling linear CRD
+```{r}
+reg1 <- df1 %>%
+  group_by(Design) %>%
+  nest() %>%
+  mutate(mod=map(data,
+                 ~lm(Yield_Mgha ~ SR_ksha, data=.x))) %>%
+  mutate(aug=map(mod,
+                 ~augment(.x))) %>%
+  mutate(pred=map(mod,
+                  ~augment(.x, newdata=nd))) %>%
+  mutate(Anova=map(mod,
+                   ~Anova(.x, type=3)))  %>% mutate(tidy=map(mod,
+                                                             ~tidy(.x)))
+
+
+
+
+```
+
+```{r}
+reg1$Anova
+
+```
+```{r}
+reg1$tidy
+```
+
+```{r}
+reg1 %>%
+  augment() %>%
+  ggplot(aes(x=SR_ksha, y=Yield_Mgha))+
+  geom_point()+
+  geom_smooth()+
+  geom_line(aes(y=.fitted))
+
+```
+
+# Modeling quadratic CRD 
+```{r}
+reg2 <- df1 %>%
+  group_by(Design) %>%
+  nest() %>%
+  mutate(mod=map(data,
+                 ~lm(Yield_Mgha ~ SR_ksha+I(SR_ksha^2), data=.x))) %>%
+  mutate(aug=map(mod,
+                 ~augment(.x))) %>%
+  mutate(pred=map(mod,
+                  ~augment(.x, newdata=nd))) %>%
+  mutate(Anova=map(mod,
+                   ~Anova(.x, type=3))) %>%
+  mutate(tidy=map(mod,
+                  ~tidy(.x)))
+
+
+
+```
+
+```{r}
+reg2$Anova
+```
+```{r}
+reg2$tidy
+```
+
+```{r}
+reg2 %>%
+  augment() %>%
+  ggplot(aes(x=SR_ksha, y=Yield_Mgha))+
+  geom_point()+
+  geom_smooth()+
+  geom_line(data=augment(reg2, newdata = nd), aes(y=.fitted))
+
+
+
+```
+
+# Modeling quadratic RCBD 
+```{r}
+reg3 <- df1 %>%
+  mutate(Block=factor(r)) %>%
+  group_by(Design) %>%
+  nest() %>%
+  mutate(mod=map(data,
+                 ~lm(Yield_Mgha ~ Block + SR_ksha+I(SR_ksha^2), data=.x))) %>%
+  mutate(aug=map(mod,
+                 ~augment(.x))) %>%
+  #mutate(pred=map(mod,
+  #                ~augment(.x, newdata=nd))) #%>%
+  mutate(Anova=map(mod,
+                   ~Anova(.x, type=3))) %>%
+  mutate(tidy=map(mod,
+                  ~tidy(.x)))
+
+```
+
+```{r}
+reg3$Anova
+```
+```{r}
+reg3$tidy
+
+```
+# Modeling quadratic RCBD random
+```{r}
+reg4 <- df1 %>%
+  mutate(Block=factor(r)) %>%
+  group_by(Design) %>%
+  nest() %>%
+  mutate(mod=map(data,
+                 ~lmer(Yield_Mgha ~ (1|Block) + SR_ksha+I(SR_ksha^2), data=.x))) %>%
+  mutate(aug=map(mod,
+                 ~augment(.x))) %>%
+  #mutate(pred=map(mod,
+  #                ~augment(.x, newdata=nd))) #%>%
+  mutate(Anova=map(mod,
+                   ~Anova(.x, type=3))) %>%
+  mutate(tidy=map(mod,
+                  ~tidy(.x)))
+
+```
+
+```{r}
+reg4$Anova
+```
+```{r}
+reg4$tidy
+
+```
+
+# 2) ANOVA  
+# CRD correctly used
+```{r}
+df2 <- df1 %>%
+  mutate(Block=factor(r),
+         fSR_ksha=factor(SR_ksha)) %>%
+  dplyr::select(Block, fSR_ksha, Design, Yield_Mgha)
+
+# crd.df
+df2_crd <- df2 %>%
+  rename(Rep=Block) %>%
+  filter(Design=="CRD") %>%
+  dplyr::select(Design, Rep, fSR_ksha, Yield_Mgha)
+
+
+write_csv(df2_crd, "../output/crd.csv")
+
+```
+```{r}
+ggplot(df2_crd, aes(x=fSR_ksha, y=Yield_Mgha))+
+  geom_boxplot()
+```
+```{r}
+options(contrasts = c("contr.sum", "contr.poly"))
+
+crd_mod <- lm(Yield_Mgha ~ fSR_ksha, data=df2_crd)
+
+
+```
+
+```{r}
+plot(crd_mod)
+```
+
+```{r}
+Anova(crd_mod, type=3)
+
+```
+
+```{r}
+crd_means <- emmeans(crd_mod, ~fSR_ksha)
+
+crd_means
+```
+
+
+```{r}
+crd_cld <- cld(crd_means, reversed=T, adjust="none",
+               Letters=letters) %>%
+  as.data.frame() %>%
+  mutate(letter=trimws(.group))
+
+crd_cld
+```
+```{r}
+ggplot(crd_cld, aes(x=fSR_ksha, y=emmean))+
+  geom_pointrange(aes(ymin=emmean-SE, ymax=emmean+SE))+
+  geom_text(aes(label=letter, y=emmean-.5))
+```
+
+
+
+# CRD wrongly used
+```{r}
+df2_crdbad <- df2 %>%
+  rename(Rep=Block) %>%
+  filter(Design=="RCBD") %>%
+  dplyr::select(Design, Rep, fSR_ksha, Yield_Mgha)
+
+
+
+```
+
+
+```{r}
+ggplot(df2_crdbad, aes(x=fSR_ksha, y=Yield_Mgha))+
+  geom_boxplot()
+```
+```{r}
+options(contrasts = c("contr.sum", "contr.poly"))
+
+crdbad_mod <- lm(Yield_Mgha ~ fSR_ksha, data=df2_crdbad)
+```
+
+```{r}
+plot(crdbad_mod)
+```
+
+
+```{r}
+Anova(crdbad_mod, type=3)
+
+```
+
+```{r}
+crdbad_means <- emmeans(crdbad_mod, ~fSR_ksha)
+
+crdbad_means
+```
+
+```{r}
+crdbad_cld <- cld(crdbad_means, reversed=T, adjust="none",
+                  Letters=letters)
+
+crdbad_cld
+```
+# RCBD to the rescue!
+```{r}
+ggplot(df2_crdbad, aes(x=fSR_ksha, y=Yield_Mgha))+
+  geom_boxplot()
+```
+
+```{r}
+options(contrasts = c("contr.sum", "contr.poly"))
+
+rcbd_mod <- lm(Yield_Mgha ~ Block + fSR_ksha, data=df2_crdbad)
+```
+
+```{r}
+plot(rcbd_mod)
+```
+
+```{r}
+Anova(rcbd_mod, type=3)
+
+```
+
+```{r}
+rcbd_means <- emmeans(rcbd_mod, ~fSR_ksha)
+
+rcbd_means
+```
+
+
+```{r}
+rcbd_cld <- cld(rcbd_means, reversed=T, adjust="none",
+                Letters=letters) %>%
+  as.data.frame() %>%
+  mutate(letter=trimws(.group))
+
+rcbd_cld
+```
+
+```{r}
+ggplot(rcbd_cld, aes(x=fSR_ksha, y=emmean))+
+  geom_pointrange(aes(ymin=emmean-SE, ymax=emmean+SE))+
+  geom_text(aes(label=letter, y=emmean-.5))
+```
+
+
+# RCBD - Blocks fixed or random?
+```{r}
+options(contrasts = c("contr.sum", "contr.poly"))
+
+rcbdrand_mod <- lmer(Yield_Mgha ~ fSR_ksha+ 
+                       (1|Block),
+                     data=df2_crdbad)
+```
+
+```{r}
+plot(rcbdrand_mod)
+```
+```{r}
+summary(rcbdrand_mod)
+```
+
+```{r}
+(4.6097)/sqrt(4)
+```
+
+```{r}
+Anova(rcbdrand_mod, type=3)
+
+```
+
+```{r}
+rcbdrand_means <- emmeans(rcbdrand_mod, ~fSR_ksha)
+
+rcbdrand_means
+```
+
+
+```{r}
+rcbdrand_cld <- cld(rcbdrand_means, reversed=T, adjust="none",
+                    Letters=letters) %>%
+  as.data.frame() %>%
+  mutate(letter=trimws(.group))
+
+rcbdrand_cld
+```
+```{r}
+ranef(rcbdrand_mod)
+
+```
+```{r}
+library(lme4)
+library(nlme)
+intervals(rcbdrand_mod)
+AICcmodavg::AICc(rcbd_mod)
+AICcmodavg::AICc(rcbdrand_mod)
+```
+```{r}
+ggplot(rcbdrand_cld, aes(x=fSR_ksha, y=emmean))+
+  geom_pointrange(aes(ymin=emmean-SE, ymax=emmean+SE))+
+  geom_text(aes(label=letter, y=emmean-.5))
+```
+
+# So what is the final decision?
+
+# 3) Plot for different types of input x output responses  
+```{r}
+# Input-output relationships simulation
+set.seed(13)
+ior_df <- data.frame(SR_ksha=seq(40, 120, 5)) %>%
+  mutate(Intercept=8+rnorm(n=n(),0,2),
+         Linear=-4+(0.13*SR_ksha) + rnorm(n=n(),0,.8),
+         Quad=((-0.0015*(SR_ksha^2)) + (0.2827*SR_ksha) - 5 + rnorm(n=n(),0,.8)),
+         LP=case_when(
+           SR_ksha < 90 ~ -4+(0.17*SR_ksha) + rnorm(n=n(),0,.8),
+           T ~ 10 + rnorm(n=n(),0,.5)
+         )) #%>%
+#gather(Type, Value, -SR_ksha) %>%
+#mutate(Type=factor(Type,
+#             levels=c("Intercept", "Linear",
+#                      "Quad", "QP")))
+
+int <- ggplot(ior_df, aes(x=SR_ksha, y=Intercept))+
+  geom_point()+
+  scale_y_continuous(limits = c(0,13))+
+  stat_smooth(n=8, span=.7, method="lm", color="blue")+
+  labs(y="Yield (Mg/ha)", title="Intercept")
+
+linear <- ggplot(ior_df, aes(x=SR_ksha, y=Linear))+
+  geom_point()+
+  scale_y_continuous(limits = c(0,13))+
+  stat_smooth(n=8, span=.7, method="lm", color="purple")+
+  labs(y="Yield (Mg/ha)", title="Linear")
+
+quad <- ggplot(ior_df, aes(x=SR_ksha, y=Quad))+
+  geom_point()+
+  scale_y_continuous(limits = c(0,13))+
+  stat_smooth(n=8, span=.7, method="lm", color="forestgreen", formula=y~x+I(x^2))+
+  labs(y="Yield (Mg/ha)", title="Quadratic")
+
+
+lp <- ggplot(ior_df, aes(x=SR_ksha, y=LP))+
+  geom_point()+
+  scale_y_continuous(limits = c(0,13))+
+  stat_smooth(n=3, span=.5, color="Red")+
+  labs(y="Yield (Mg/ha)", title="Linear-Plateau")
+
+
+lp
+
+library(cowplot)
+
+plot_grid(int, linear,
+          quad, lp)+
+  ggsave("../output/ior.png", width = 6, height = 4)
+```
+

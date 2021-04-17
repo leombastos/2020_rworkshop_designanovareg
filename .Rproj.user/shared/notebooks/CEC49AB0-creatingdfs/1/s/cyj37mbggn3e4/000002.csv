@@ -1,0 +1,12 @@
+"0","```r
+reg1 %>%
+  augment() %>%
+  ggplot(aes(x=SR_ksha, y=Yield_Mgha))+
+  geom_point()+
+  geom_smooth()+
+  geom_line(aes(y=.fitted))
+
+```"
+"1","Error in augment.data.frame(.) : 
+  augment's first argument should be a model, not a data.frame
+"

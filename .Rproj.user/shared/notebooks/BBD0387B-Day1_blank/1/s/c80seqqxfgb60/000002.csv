@@ -1,0 +1,5 @@
+"0","```r
+rcbdrand_means <- emmeans(rcbdrand_mod, ~fSR_ksha)
+
+rcbdrand_means
+```"

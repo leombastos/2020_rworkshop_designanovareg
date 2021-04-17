@@ -1,0 +1,14 @@
+"0","```r
+library(tidyverse)
+```"
+"1","There were 17 warnings (use warnings() to see them)
+"
+"0","```r
+library(broom)
+library(broom.mixed)
+library(car)
+library(lmerTest)
+library(emmeans)
+library(multcomp)
+
+```"

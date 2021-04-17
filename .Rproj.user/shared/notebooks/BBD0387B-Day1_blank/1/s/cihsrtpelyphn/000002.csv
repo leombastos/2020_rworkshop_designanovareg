@@ -1,0 +1,5 @@
+"0","```r
+# Same plot as in ex above
+ggplot(rcbd_dfw, aes(x=fSR_ksha, y=Yield_Mgha))+
+  geom_boxplot()
+```"

@@ -1,0 +1,17 @@
+"0","```r
+reg1 <- df1 %>%
+  group_by(Design) %>%
+  nest() %>%
+  mutate(mod=map(data,
+                 ~lm(Yield_Mgha ~ SR_ksha, data=.x))) %>%
+  mutate(aug=map(mod,
+                 ~augment(.x))) %>%
+  mutate(pred=map(mod,
+                  ~augment(.x, newdata=nd))) %>%
+  mutate(Anova=map(mod,
+                   ~Anova(.x, type=3)))  %>% mutate(tidy=map(mod,
+                  ~tidy(.x)))
+
+```"
+"1","Error in eval(lhs, parent, parent) : object 'df1' not found
+"

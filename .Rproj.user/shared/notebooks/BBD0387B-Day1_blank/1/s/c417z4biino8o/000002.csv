@@ -1,0 +1,8 @@
+"0","```r
+# Just giving it a different name, but same as in #6
+rcbd_dfw <- rcbd_df %>%
+  mutate(Rep=factor(Rep),
+         fSR_ksha=factor(SR_ksha))
+
+summary(rcbd_dfw)
+```"

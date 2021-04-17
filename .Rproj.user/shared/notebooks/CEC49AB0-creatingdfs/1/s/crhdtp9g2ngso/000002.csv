@@ -1,0 +1,24 @@
+"0","```r
+summary(reg2)
+
+```"
+"1","
+Call:
+lm(formula = Yield_Mgha ~ SR_ksha + I(SR_ksha^2), data = df1)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-0.6445 -0.2367  0.0462  0.2306  0.5762 
+
+Coefficients:
+               Estimate Std. Error t value Pr(>|t|)    
+(Intercept)   1.3222122  0.7365600   1.795   0.0904 .  
+SR_ksha       0.2666588  0.0200251  13.316 2.02e-10 ***
+I(SR_ksha^2) -0.0013453  0.0001238 -10.866 4.52e-09 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.3706 on 17 degrees of freedom
+Multiple R-squared:  0.9616,	Adjusted R-squared:  0.9571 
+F-statistic:   213 on 2 and 17 DF,  p-value: 9.218e-13
+"

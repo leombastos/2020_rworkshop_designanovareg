@@ -1,0 +1,9 @@
+"0","```r
+# Changing to sum-to-zero contrast
+options(contrasts = c(\"contr.sum\", \"contr.poly\"))
+
+# Model fitting
+rcbdrand_mod 
+
+# Summary
+```"
